@@ -1,0 +1,20 @@
+{
+  "name": "baston-vivo",
+  "version": "1.0.0",
+  "description": "Juego de realidad mixta del baston inteligente",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jjgonzalez1/baston_juego.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jjgonzalez1/baston_juego/issues"
+  },
+  "homepage": "https://github.com/jjgonzalez1/baston_juego#readme",
+  "dependencies": {
+    "three": "^0.180.0"
+  }
+}
