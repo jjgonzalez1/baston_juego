@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0a1220" />
+  <title>Bastón Vivo — Guardián del Bosque · Realidad Mixta</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦯</text></svg>" />
+  <link rel="stylesheet" href="./css/style.css" />
+  <script type="importmap">
+    { "imports": { "three": "./vendor/three/three.module.js" } }
+  </script>
+</head>
+<body>
+  <div id="app"></div>
+
+  <!-- ══════════ HUD del juego ══════════ -->
+  <div id="hud" class="hidden" aria-live="polite">
+    <!-- Panel de sensores del bastón (izquierda) -->
+    <section id="panelBio" class="panel">
+      <h2>🦯 Bastón — Sensores</h2>
+      <div class="sensor-row"><span class="ico">❤️</span><span class="lbl">Frec. cardíaca</span><b id="bpm">62</b><span class="unit">ppm</span></div>
+      <div class="sensor-row"><span class="ico">🫁</span><span class="lbl">Respiración</span><b id="resp">12</b><span class="unit">rpm</span><em id="respPhase">Inhalando</em></div>
+      <div class="sensor-row"><span class="ico">💪</span><span class="lbl">Sensor fuerza</span><b id="forceN">0</b><span class="unit">N</span></div>
+      <div class="bar"><div id="forceBar" class="bar-fill force"></div><div id="chargeBar" class="bar-fill charge"></div></div>
+      <div class="sensor-row"><span class="ico">🔋</span><span class="lbl">Baterías</span><b id="battPct">100</b><span class="unit">%</span></div>
+      <div class="bar"><div id="battBar" class="bar-fill batt"></div></div>
+      <div id="flowBadge" class="badge hidden">🌊 MODO FLOW</div>
+      <div id="lowBatt" class="badge warn hidden">⚠️ Batería baja — respira para recargar</div>
+    </section>
+
+    <!-- Panel de vínculo / objetivos (derecha) -->
+    <section id="panelObj" class="panel">
+      <h2>🌿 Vínculo con el bosque</h2>
+      <div class="bar big"><div id="linkBar" class="bar-fill link"></div></div>
+      <div class="link-pct"><b id="linkPct">0</b>% <span id="best">· récord 0%</span></div>
+      <p id="objText">Golpea el suelo con la punta del bastón</p>
+    </section>
+
+    <!-- Insignia de ráfaga de viento -->
+    <div id="windBadge" class="wind-badge hidden">🌬️ Ráfaga — golpes con chispas x2</div>
+
+    <!-- Anillo de respiración (Modo Calma) -->
+    <div id="breath" class="breath hidden">
+      <svg viewBox="0 0 120 120">
+        <circle cx="60" cy="60" r="44" class="breath-track" />
+        <circle id="breathRing" cx="60" cy="60" r="44" class="breath-fill" />
+      </svg>
+      <div class="breath-text"><b id="breathPhase">Inhala</b><span id="breathCount">ciclo 1/3</span></div>
+      <p>Mantén la calma y quédate quieto</p>
+    </div>
+
+    <!-- Avisos -->
+    <div id="toast" class="toast hidden"></div>
+    <div id="hint" class="hint"></div>
+
+    <!-- Botones flotantes -->
+    <div id="hudBtns">
+      <button id="btnMute" class="round" title="Silenciar">🔊</button>
+      <button id="btnHelp" class="round" title="Ayuda">❔</button>
+      <button id="btnExitXR" class="round danger hidden" title="Salir de realidad mixta">✕</button>
+    </div>
+
+    <!-- Modal de ayuda -->
+    <div id="helpModal" class="modal hidden">
+      <div class="modal-card">
+        <h3>Cómo jugar</h3>
+        <div id="help3d" class="help-block">
+          <p><b>🖱️ Mover el ratón / dedo:</b> guías el bastón por el suelo.</p>
+          <p><b>👆 Toque rápido / clic:</b> golpe con el sensor de fuerza (más velocidad = más Newtons).</p>
+          <p><b>✊ Mantener pulsado:</b> cargar un golpe potente.</p>
+          <p><b>🧘 Quédate quieto:</b> el mango detecta calma → minijuego de respiración → recarga batería y desbloquea <b>Flow</b>.</p>
+        </div>
+        <div id="helpxr" class="help-block hidden">
+          <p><b>📱 Mueve el móvil:</b> el bosque se materializa en tu habitación sobre una superficie.</p>
+          <p><b>👆 Toca la pantalla:</b> el bastón golpea donde apunta el retículo ◌.</p>
+          <p><b>🧘 Quédate quieto:</b> activa el Modo Calma (respiración) para recargar.</p>
+        </div>
+        <p class="help-goal">🎯 <b>Objetivo:</b> despierta el bosque, revela los 3 cristales, enciende las 5 runas y conecta el santuario al 100%.</p>
+        <button id="btnCloseHelp" class="primary">Entendido</button>
+      </div>
+    </div>
+
+    <!-- Pantalla de victoria -->
+    <div id="winOverlay" class="modal hidden">
+      <div class="modal-card win">
+        <h3>🌲 ¡Santuario Conectado! 🌲</h3>
+        <img src="./assets/boceto_baston.jpg" alt="Boceto del bastón" class="win-sketch" />
+        <div id="winStats" class="win-stats"></div>
+        <button id="btnContinue" class="primary">Seguir explorando</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ Pantalla de inicio ══════════ -->
+  <div id="overlayStart">
+    <div class="start-card">
+      <p class="kicker">Realidad mixta · WebXR</p>
+      <h1>Bastón Vivo</h1>
+      <p class="subtitle">Guardián del Bosque</p>
+      <img src="./assets/boceto_baston.jpg" alt="Boceto del bastón inteligente" class="sketch" />
+      <ul class="features">
+        <li>🖐️ <b>Mango bio-sensor</b> — frecuencia cardíaca y respiración → Modo Calma &amp; Flow</li>
+        <li>💪 <b>Sensor de fuerza</b> — la intensidad de tus golpes cambia el mundo</li>
+        <li>🔋 <b>Baterías</b> — cada pulso gasta energía; recarga con cristales y calma</li>
+        <li>🌲 <b>Entorno reactivo</b> — luciérnagas, espíritus, rocas, setas y un santuario</li>
+      </ul>
+      <div class="btns">
+        <button id="btn3D" class="primary big">▶ Jugar en 3D</button>
+        <button id="btnAR" class="ghost big" disabled>🕶️ Realidad Mixta (AR)</button>
+      </div>
+      <p id="arNote" class="note">Comprobando soporte AR…</p>
+    </div>
+  </div>
+
+  <div id="vignette"></div>
+
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>
